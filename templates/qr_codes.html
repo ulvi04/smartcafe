@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}QR Kodlar - {{ restaurant.name }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="h3 mb-0">
+            <i class="fas fa-qrcode text-primary me-2"></i>QR Kod İdarəetmə
+        </h1>
+        <p class="text-muted">{{ restaurant.name }} masa QR kodları</p>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            <strong>İstifadə:</strong> QR kodları masalara yerləşdirin. Müştərilər QR kodu skan edərək birbaşa menyuya daxil ola və sifariş verə bilərlər.
+        </div>
+    </div>
+</div>
+
+{% if qr_codes %}
+<div class="row">
+    {% for qr_data in qr_codes %}
+    <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+        <div class="card">
+            <div class="card-header text-center bg-primary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chair me-2"></i>Masa {{ qr_data.table_number }}
+                </h5>
+            </div>
+            <div class="card-body text-center">
+                <div class="qr-code-container mb-3">
+                    <img src="data:image/png;base64,{{ qr_data.qr_image }}" 
+                         alt="Masa {{ qr_data.table_number }} QR Kod" 
+                         class="img-fluid qr-code-image">
+                </div>
+                <p class="small text-muted mb-3">
+                    <i class="fas fa-link me-1"></i>
+                    <a href="{{ qr_data.qr_url }}" target="_blank" class="text-decoration-none">
+                        {{ qr_data.qr_url }}
+                    </a>
+                </p>
+                <div class="btn-group btn-group-sm d-grid">
+                    <button class="btn btn-outline-primary" onclick="printQR({{ qr_data.table_number }})">
+                        <i class="fas fa-print me-1"></i>Çap et
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="row mt-4">
+    <div class="col-12 text-center">
+        <button class="btn btn-primary" onclick="printAllQR()">
+            <i class="fas fa-print me-2"></i>Bütün QR Kodları Çap et
+        </button>
+    </div>
+</div>
+{% else %}
+<div class="text-center py-5">
+    <i class="fas fa-qrcode fa-5x text-muted mb-4"></i>
+    <h4 class="text-muted">QR Kod Tapılmadı</h4>
+    <p class="text-muted">Restoran masaları üçün QR kodlar yaradılmayıb</p>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.qr-code-container {
+    background: #f8f9fa;
+    border: 2px solid #dee2e6;
+    border-radius: 10px;
+    padding: 15px;
+}
+
+.qr-code-image {
+    max-width: 200px;
+    height: auto;
+}
+
+@media print {
+    .navbar, .container-fluid > .alert, .btn, .card-header {
+        display: none !important;
+    }
+    
+    .card {
+        break-inside: avoid;
+        margin-bottom: 20px;
+    }
+    
+    .qr-code-image {
+        max-width: 150px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function printQR(tableNumber) {
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+        <html>
+        <head>
+            <title>Masa ${tableNumber} QR Kod</title>
+            <style>
+                body { font-family: Arial, sans-serif; text-align: center; padding: 20px; }
+                .qr-container { border: 2px solid #333; padding: 20px; display: inline-block; }
+                h1 { margin-bottom: 10px; }
+                img { max-width: 200px; }
+                .restaurant-name { font-size: 18px; margin-top: 10px; }
+            </style>
+        </head>
+        <body>
+            <div class="qr-container">
+                <h1>{{ restaurant.name }}</h1>
+                <h2>Masa ${tableNumber}</h2>
+                <img src="data:image/png;base64,${document.querySelector('img[alt="Masa ${tableNumber} QR Kod"]').src.split(',')[1]}" alt="QR Kod">
+                <div class="restaurant-name">Menyu üçün QR kodu skan edin</div>
+            </div>
+        </body>
+        </html>
+    `);
+    printWindow.document.close();
+    printWindow.print();
+}
+
+function printAllQR() {
+    window.print();
+}
+</script>
+{% endblock %}

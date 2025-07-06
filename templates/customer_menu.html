@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="az">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ restaurant.name }} - Masа {{ table_number }} Menyu</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #0d6efd;
+            --secondary-color: #6c757d;
+            --success-color: #198754;
+            --warning-color: #ffc107;
+        }
+
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .header-section {
+            background: linear-gradient(135deg, var(--primary-color), #0056b3);
+            color: white;
+            padding: 20px 0;
+            margin-bottom: 20px;
+        }
+
+        .menu-item-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .menu-item-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        .price-tag {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--success-color);
+        }
+
+        .cart-badge {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+
+        .cart-button {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .quantity-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .quantity-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sticky-cart {
+            position: sticky;
+            bottom: 0;
+            background: white;
+            border-top: 1px solid #dee2e6;
+            padding: 15px 0;
+            margin-top: 20px;
+        }
+
+        .category-nav {
+            position: sticky;
+            top: 0;
+            background: white;
+            z-index: 100;
+            border-bottom: 1px solid #dee2e6;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header-section">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col">
+                    <h1 class="h3 mb-1">
+                        <i class="fas fa-utensils me-2"></i>{{ restaurant.name }}
+                    </h1>
+                    <p class="mb-0">
+                        <i class="fas fa-chair me-1"></i>Masа {{ table_number }}
+                    </p>
+                </div>
+                <div class="col-auto">
+                    <div class="text-end">
+                        <small>Sifariş vermək üçün məhsulları seçin</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if categories %}
+    <div class="category-nav">
+        <div class="container">
+            <div class="row">
+                <div class="col-12">
+                    <div class="d-flex overflow-auto pb-2">
+                        <button class="btn btn-outline-primary me-2 category-btn active" data-category="all">
+                            Hamısı
+                        </button>
+                        {% for category in categories %}
+                        <button class="btn btn-outline-primary me-2 category-btn" data-category="{{ category.id }}">
+                            {{ category.name }}
+                        </button>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="container">
+        <div id="menuContainer">
+            {% if menu_items %}
+            <div class="row">
+                {% for item in menu_items %}
+                <div class="col-md-6 col-lg-4 mb-4 menu-item" data-category="{{ item.category_id or 'uncategorized' }}">
+                    <div class="card menu-item-card h-100">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h5 class="card-title mb-0">{{ item.name }}</h5>
+                                <span class="price-tag">{{ "%.2f"|format(item.price) }} ₼</span>
+                            </div>
+                            
+                            {% if item.description %}
+                            <p class="card-text text-muted small mb-3">{{ item.description }}</p>
+                            {% endif %}
+                            
+                            <div class="quantity-controls">
+                                <button class="btn btn-outline-danger quantity-btn" onclick="decreaseQuantity({{ item.id }})">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                                <span class="quantity-display fw-bold" id="qty-{{ item.id }}">0</span>
+                                <button class="btn btn-outline-success quantity-btn" onclick="increaseQuantity({{ item.id }})">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-utensils fa-5x text-muted mb-4"></i>
+                <h4 class="text-muted">Menyu Tapılmadı</h4>
+                <p class="text-muted">Bu restoran üçün hələ menyu əlavə edilməyib</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Cart Badge -->
+    <div class="cart-badge">
+        <button class="btn btn-primary cart-button position-relative" data-bs-toggle="modal" data-bs-target="#cartModal">
+            <i class="fas fa-shopping-cart"></i>
+            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" id="cartCount">
+                0
+            </span>
+        </button>
+    </div>
+
+    <!-- Cart Modal -->
+    <div class="modal fade" id="cartModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-shopping-cart me-2"></i>Səbətim
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="cartItems">
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-shopping-cart fa-3x mb-3"></i>
+                            <p>Səbətiniz boşdur</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <div class="w-100">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="h5 mb-0">Ümumi:</span>
+                            <span class="h4 mb-0 text-success" id="cartTotal">0.00 ₼</span>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="customerName" class="form-label">Adınız (istəyə bağlı)</label>
+                            <input type="text" class="form-control" id="customerName" placeholder="Adınızı qeyd edə bilərsiniz">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="orderNotes" class="form-label">Sifariş qeydi</label>
+                            <textarea class="form-control" id="orderNotes" rows="2" placeholder="Xüsusi istəkləriniz..."></textarea>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button class="btn btn-success btn-lg" onclick="submitOrder()" id="submitOrderBtn" disabled>
+                                <i class="fas fa-paper-plane me-2"></i>Sifariş Ver
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success Modal -->
+    <div class="modal fade" id="successModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-body text-center py-4">
+                    <i class="fas fa-check-circle fa-4x text-success mb-3"></i>
+                    <h4>Sifariş Qəbul Edildi!</h4>
+                    <p class="text-muted">Sifarişiniz restorana çatdırıldı. Qısa müddətdə hazırlanacaq.</p>
+                    <p><strong>Sifariş №: #<span id="orderNumber"></span></strong></p>
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <button type="button" class="btn btn-primary" onclick="location.reload()">
+                        Yeni Sifariş Ver
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let cart = {};
+        const menuItems = {
+            {% for item in menu_items %}
+            {{ item.id }}: {
+                name: "{{ item.name }}",
+                price: {{ item.price }},
+                category_id: {{ item.category_id or 'null' }}
+            }{% if not loop.last %},{% endif %}
+            {% endfor %}
+        };
+
+        function increaseQuantity(itemId) {
+            if (!cart[itemId]) {
+                cart[itemId] = 0;
+            }
+            cart[itemId]++;
+            updateQuantityDisplay(itemId);
+            updateCart();
+        }
+
+        function decreaseQuantity(itemId) {
+            if (cart[itemId] && cart[itemId] > 0) {
+                cart[itemId]--;
+                if (cart[itemId] === 0) {
+                    delete cart[itemId];
+                }
+                updateQuantityDisplay(itemId);
+                updateCart();
+            }
+        }
+
+        function updateQuantityDisplay(itemId) {
+            const qtyElement = document.getElementById(`qty-${itemId}`);
+            qtyElement.textContent = cart[itemId] || 0;
+        }
+
+        function updateCart() {
+            const cartCount = Object.values(cart).reduce((sum, qty) => sum + qty, 0);
+            document.getElementById('cartCount').textContent = cartCount;
+            
+            const cartItems = document.getElementById('cartItems');
+            const cartTotal = document.getElementById('cartTotal');
+            const submitBtn = document.getElementById('submitOrderBtn');
+            
+            if (cartCount === 0) {
+                cartItems.innerHTML = `
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-shopping-cart fa-3x mb-3"></i>
+                        <p>Səbətiniz boşdur</p>
+                    </div>
+                `;
+                cartTotal.textContent = '0.00 ₼';
+                submitBtn.disabled = true;
+                return;
+            }
+
+            let total = 0;
+            let cartHTML = '<div class="list-group">';
+            
+            for (const [itemId, qty] of Object.entries(cart)) {
+                const item = menuItems[itemId];
+                const itemTotal = item.price * qty;
+                total += itemTotal;
+                
+                cartHTML += `
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-0">${item.name}</h6>
+                            <small class="text-muted">${item.price.toFixed(2)} ₼ x ${qty}</small>
+                        </div>
+                        <span class="fw-bold">${itemTotal.toFixed(2)} ₼</span>
+                    </div>
+                `;
+            }
+            
+            cartHTML += '</div>';
+            cartItems.innerHTML = cartHTML;
+            cartTotal.textContent = `${total.toFixed(2)} ₼`;
+            submitBtn.disabled = false;
+        }
+
+        function submitOrder() {
+            const customerName = document.getElementById('customerName').value;
+            const notes = document.getElementById('orderNotes').value;
+            
+            const orderData = {
+                restaurant_id: {{ restaurant.id }},
+                table_number: {{ table_number }},
+                customer_name: customerName,
+                notes: notes,
+                items: []
+            };
+            
+            for (const [itemId, qty] of Object.entries(cart)) {
+                orderData.items.push({
+                    menu_item_id: parseInt(itemId),
+                    quantity: qty
+                });
+            }
+            
+            fetch('/api/order', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(orderData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('orderNumber').textContent = data.order_id;
+                    bootstrap.Modal.getInstance(document.getElementById('cartModal')).hide();
+                    new bootstrap.Modal(document.getElementById('successModal')).show();
+                } else {
+                    alert('Sifariş göndərilmədi. Zəhmət olmasa yenidən cəhd edin.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Sifariş göndərilmədi. Zəhmət olmasa yenidən cəhd edin.');
+            });
+        }
+
+        // Category filtering
+        document.querySelectorAll('.category-btn').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const category = this.dataset.category;
+                
+                // Update active button
+                document.querySelectorAll('.category-btn').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Filter menu items
+                document.querySelectorAll('.menu-item').forEach(item => {
+                    if (category === 'all' || item.dataset.category === category || (category === 'uncategorized' && item.dataset.category === 'null')) {
+                        item.style.display = 'block';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

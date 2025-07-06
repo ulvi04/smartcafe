@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+
+{% block title %}{{ restaurant.name }} - İdarəetmə Paneli{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="h3 mb-0">
+            <i class="fas fa-store text-primary me-2"></i>{{ restaurant.name }}
+        </h1>
+        <p class="text-muted">Restoran idarəetmə paneli</p>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">{{ restaurant.table_count }}</h4>
+                        <p class="card-text">Ümumi Masa</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-chair fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">{{ menu_count }}</h4>
+                        <p class="card-text">Menyu Məhsulu</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-utensils fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">{{ recent_orders|length }}</h4>
+                        <p class="card-text">Aktiv Sifariş</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-shopping-cart fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">
+                            {{ "%.2f"|format(recent_orders|sum(attribute='total_amount') or 0) }} ₼
+                        </h4>
+                        <p class="card-text">Gündəlik Gəlir</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-lira-sign fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-shopping-cart me-2"></i>Son Sifarişlər
+                </h5>
+                <a href="{{ url_for('orders') }}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-list me-1"></i>Bütün Sifarişlər
+                </a>
+            </div>
+            <div class="card-body">
+                {% if recent_orders %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Sifariş #</th>
+                                <th>Masa</th>
+                                <th>Müştəri</th>
+                                <th>Məbləğ</th>
+                                <th>Status</th>
+                                <th>Zaman</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in recent_orders %}
+                            <tr>
+                                <td><strong>#{{ order.id }}</strong></td>
+                                <td>
+                                    <span class="badge bg-info">Masa {{ order.table_number }}</span>
+                                </td>
+                                <td>{{ order.customer_name or 'Müştəri' }}</td>
+                                <td><strong>{{ "%.2f"|format(order.total_amount) }} ₼</strong></td>
+                                <td>
+                                    {% if order.status == 'pending' %}
+                                        <span class="badge bg-warning">Gözləyir</span>
+                                    {% elif order.status == 'preparing' %}
+                                        <span class="badge bg-info">Hazırlanır</span>
+                                    {% elif order.status == 'ready' %}
+                                        <span class="badge bg-success">Hazırdır</span>
+                                    {% elif order.status == 'served' %}
+                                        <span class="badge bg-secondary">Çatdırıldı</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Ləğv edildi</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <small class="text-muted">{{ order.created_at }}</small>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-shopping-cart fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">Hələ sifariş yoxdur</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-tools me-2"></i>Sürətli Əməliyyatlar
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('menu_management') }}" class="btn btn-outline-primary">
+                        <i class="fas fa-clipboard-list me-2"></i>Menyu İdarəetmə
+                    </a>
+                    <a href="{{ url_for('orders') }}" class="btn btn-outline-success">
+                        <i class="fas fa-shopping-cart me-2"></i>Sifariş İzləmə
+                    </a>
+                    <a href="{{ url_for('qr_codes') }}" class="btn btn-outline-info">
+                        <i class="fas fa-qrcode me-2"></i>QR Kodları Görüntülə
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-info-circle me-2"></i>Restoran Məlumatları
+                </h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Restoran Adı:</strong> {{ restaurant.name }}</p>
+                <p><strong>Slug:</strong> {{ restaurant.slug }}</p>
+                {% if restaurant.address %}<p><strong>Ünvan:</strong> {{ restaurant.address }}</p>{% endif %}
+                {% if restaurant.phone %}<p><strong>Telefon:</strong> {{ restaurant.phone }}</p>{% endif %}
+                {% if restaurant.email %}<p><strong>E-poçt:</strong> {{ restaurant.email }}</p>{% endif %}
+                <p><strong>Masa Sayısı:</strong> {{ restaurant.table_count }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Dashboardu hər 30 saniyədən bir yenilə
+setInterval(function() {
+    location.reload();
+}, 30000);
+</script>
+{% endblock %}

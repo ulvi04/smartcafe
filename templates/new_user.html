@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Yeni İstifadəçi - Smart Cafe{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title mb-0">
+                    <i class="fas fa-user-plus me-2"></i>Yeni Restoran Sahibi Əlavə Et
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('new_user') }}">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">İstifadəçi adı *</label>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                        <div class="form-text">Daxil olarkən istifadə olunacaq istifadəçi adı</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="email" class="form-label">E-poçt *</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="password" class="form-label">Şifrə *</label>
+                        <input type="password" class="form-control" id="password" name="password" required minlength="6">
+                        <div class="form-text">Ən azı 6 simvol olmalıdır</div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-1"></i>Ləğv et
+                        </a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-user-plus me-1"></i>İstifadəçi Yarad
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

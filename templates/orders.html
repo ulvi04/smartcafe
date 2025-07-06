@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+
+{% block title %}Sifarişlər - {{ restaurant.name }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="h3 mb-0">
+            <i class="fas fa-shopping-cart text-primary me-2"></i>Sifariş İdarəetmə
+        </h1>
+        <p class="text-muted">{{ restaurant.name }} aktiv sifarişləri</p>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-auto">
+        <button class="btn btn-primary" onclick="refreshOrders()">
+            <i class="fas fa-sync-alt me-1"></i>Yenilə
+        </button>
+    </div>
+    <div class="col-auto">
+        <div class="form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="autoRefresh" checked>
+            <label class="form-check-label" for="autoRefresh">
+                Avtomatik yeniləmə (3 saniyə)
+            </label>
+        </div>
+    </div>
+</div>
+
+<div id="ordersContainer">
+    {% if orders %}
+    <div class="row">
+        {% for order in orders %}
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card order-card border-start border-warning border-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-receipt me-1"></i>Sifariş #{{ order.id }}
+                    </h6>
+                    <span class="badge bg-info">Masa {{ order.table_number }}</span>
+                </div>
+                <div class="card-body">
+                    <div class="mb-2">
+                        <strong>Müştəri:</strong> {{ order.customer_name or 'Naməlum' }}
+                    </div>
+                    <div class="mb-2">
+                        <strong>Ümumi:</strong> <span class="text-success">{{ "%.2f"|format(order.total_amount) }} ₼</span>
+                    </div>
+                    <div class="mb-2">
+                        <strong>Məhsul sayı:</strong> {{ order.item_count }}
+                    </div>
+                    {% if order.notes %}
+                    <div class="mb-2">
+                        <strong>Qeyd:</strong> 
+                        <small class="text-muted">{{ order.notes }}</small>
+                    </div>
+                    {% endif %}
+                    <div class="mb-3">
+                        <small class="text-muted">
+                            <i class="fas fa-clock me-1"></i>{{ order.created_at }}
+                        </small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Status:</label>
+                        <select class="form-select form-select-sm status-select" data-order-id="{{ order.id }}">
+                            <option value="pending" {% if order.status == 'pending' %}selected{% endif %}>Gözləyir</option>
+                            <option value="preparing" {% if order.status == 'preparing' %}selected{% endif %}>Hazırlanır</option>
+                            <option value="ready" {% if order.status == 'ready' %}selected{% endif %}>Hazırdır</option>
+                            <option value="served" {% if order.status == 'served' %}selected{% endif %}>Çatdırıldı</option>
+                            <option value="cancelled" {% if order.status == 'cancelled' %}selected{% endif %}>Ləğv edildi</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-5">
+        <i class="fas fa-shopping-cart fa-5x text-muted mb-4"></i>
+        <h4 class="text-muted">Aktiv Sifariş Tapılmadı</h4>
+        <p class="text-muted">Yeni sifarişlər gəldikdə burada görünəcək</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let autoRefreshInterval;
+
+function refreshOrders() {
+    fetch('/api/orders/{{ restaurant.id }}')
+        .then(response => response.json())
+        .then(orders => {
+            updateOrdersDisplay(orders);
+        })
+        .catch(error => {
+            console.error('Sifarişlər alınarkən xəta:', error);
+        });
+}
+
+function updateOrdersDisplay(orders) {
+    const container = document.getElementById('ordersContainer');
+    
+    if (orders.length === 0) {
+        container.innerHTML = `
+            <div class="text-center py-5">
+                <i class="fas fa-shopping-cart fa-5x text-muted mb-4"></i>
+                <h4 class="text-muted">Aktiv Sifariş Tapılmadı</h4>
+                <p class="text-muted">Yeni sifarişlər gəldikdə burada görünəcək</p>
+            </div>
+        `;
+        return;
+    }
+
+    const ordersHtml = orders.map(order => `
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card order-card border-start border-warning border-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-receipt me-1"></i>Sifariş #${order.id}
+                    </h6>
+                    <span class="badge bg-info">Masa ${order.table_number}</span>
+                </div>
+                <div class="card-body">
+                    <div class="mb-2">
+                        <strong>Müştəri:</strong> ${order.customer_name || 'Naməlum'}
+                    </div>
+                    <div class="mb-2">
+                        <strong>Ümumi:</strong> <span class="text-success">${parseFloat(order.total_amount).toFixed(2)} ₼</span>
+                    </div>
+                    <div class="mb-2">
+                        <strong>Məhsul sayı:</strong> ${order.item_count}
+                    </div>
+                    ${order.notes ? `<div class="mb-2"><strong>Qeyd:</strong> <small class="text-muted">${order.notes}</small></div>` : ''}
+                    <div class="mb-3">
+                        <small class="text-muted">
+                            <i class="fas fa-clock me-1"></i>${order.created_at}
+                        </small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Status:</label>
+                        <select class="form-select form-select-sm status-select" data-order-id="${order.id}">
+                            <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>Gözləyir</option>
+                            <option value="preparing" ${order.status === 'preparing' ? 'selected' : ''}>Hazırlanır</option>
+                            <option value="ready" ${order.status === 'ready' ? 'selected' : ''}>Hazırdır</option>
+                            <option value="served" ${order.status === 'served' ? 'selected' : ''}>Çatdırıldı</option>
+                            <option value="cancelled" ${order.status === 'cancelled' ? 'selected' : ''}>Ləğv edildi</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `).join('');
+
+    container.innerHTML = `<div class="row">${ordersHtml}</div>`;
+    
+    // Reattach event listeners
+    attachStatusChangeListeners();
+}
+
+function attachStatusChangeListeners() {
+    document.querySelectorAll('.status-select').forEach(select => {
+        select.addEventListener('change', function() {
+            const orderId = this.dataset.orderId;
+            const newStatus = this.value;
+            
+            fetch(`/api/order/${orderId}/status`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ status: newStatus })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Show success message
+                    showNotification('Sifariş statusu yeniləndi', 'success');
+                    // Refresh orders after a short delay
+                    setTimeout(refreshOrders, 1000);
+                }
+            })
+            .catch(error => {
+                console.error('Sifariş statusu yenilənərkən xəta:', error);
+                showNotification('Status yenilənərkən xəta baş verdi', 'error');
+            });
+        });
+    });
+}
+
+function showNotification(message, type) {
+    const alert = document.createElement('div');
+    alert.className = `alert alert-${type === 'error' ? 'danger' : 'success'} alert-dismissible fade show`;
+    alert.innerHTML = `
+        ${message}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    `;
+    document.querySelector('.container-fluid').insertBefore(alert, document.querySelector('.container-fluid').firstChild);
+    
+    // Auto dismiss after 3 seconds
+    setTimeout(() => {
+        alert.remove();
+    }, 3000);
+}
+
+// Auto refresh functionality
+document.getElementById('autoRefresh').addEventListener('change', function() {
+    if (this.checked) {
+        autoRefreshInterval = setInterval(refreshOrders, 3000);
+    } else {
+        clearInterval(autoRefreshInterval);
+    }
+});
+
+// Start auto refresh on page load
+document.addEventListener('DOMContentLoaded', function() {
+    attachStatusChangeListeners();
+    autoRefreshInterval = setInterval(refreshOrders, 3000);
+});
+
+// Clear interval when page is hidden
+document.addEventListener('visibilitychange', function() {
+    if (document.hidden) {
+        clearInterval(autoRefreshInterval);
+    } else if (document.getElementById('autoRefresh').checked) {
+        autoRefreshInterval = setInterval(refreshOrders, 3000);
+    }
+});
+</script>
+{% endblock %}

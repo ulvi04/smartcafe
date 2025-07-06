@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Panel - Smart Cafe{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1 class="h3 mb-0">
+            <i class="fas fa-tachometer-alt text-primary me-2"></i>İdarəetmə Paneli
+        </h1>
+        <p class="text-muted">Bütün restoranları və istifadəçiləri buradan idarə edə bilərsiniz</p>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">{{ restaurants|length }}</h4>
+                        <p class="card-text">Ümumi Restoran</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-store fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">{{ users|length }}</h4>
+                        <p class="card-text">Restoran Sahibləri</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-users fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">
+                            {% set total_tables = restaurants|sum(attribute='table_count') %}
+                            {{ total_tables or 0 }}
+                        </h4>
+                        <p class="card-text">Ümumi Masa</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-chair fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-3 mb-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">
+                            {% set total_orders = restaurants|sum(attribute='total_orders') %}
+                            {{ total_orders or 0 }}
+                        </h4>
+                        <p class="card-text">Ümumi Sifariş</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-shopping-cart fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-store me-2"></i>Restoranlar
+                </h5>
+                <a href="{{ url_for('new_restaurant') }}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-plus me-1"></i>Yeni Restoran
+                </a>
+            </div>
+            <div class="card-body">
+                {% if restaurants %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Restoran Adı</th>
+                                <th>Sahibi</th>
+                                <th>Masa Sayısı</th>
+                                <th>Sifariş</th>
+                                <th>Status</th>
+                                <th>Əməliyyatlar</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for restaurant in restaurants %}
+                            <tr>
+                                <td>
+                                    <strong>{{ restaurant.name }}</strong>
+                                    <br>
+                                    <small class="text-muted">{{ restaurant.slug }}</small>
+                                </td>
+                                <td>{{ restaurant.owner_name }}</td>
+                                <td>
+                                    <span class="badge bg-info">{{ restaurant.table_count or 0 }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-success">{{ restaurant.total_orders or 0 }}</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-success">Aktiv</span>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <button class="btn btn-outline-primary btn-sm" title="Düzəlt">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-outline-danger btn-sm" title="Sil">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-store fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">Hələ restoran əlavə edilməyib</p>
+                    <a href="{{ url_for('new_restaurant') }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-1"></i>İlk Restoranı Əlavə Et
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4 mb-4">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-users me-2"></i>Restoran Sahibləri
+                </h5>
+                <a href="{{ url_for('new_user') }}" class="btn btn-success btn-sm">
+                    <i class="fas fa-plus me-1"></i>Yeni İstifadəçi
+                </a>
+            </div>
+            <div class="card-body">
+                {% if users %}
+                <div class="list-group list-group-flush">
+                    {% for user in users %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>{{ user.username }}</strong>
+                            <br>
+                            <small class="text-muted">{{ user.email }}</small>
+                        </div>
+                        <span class="badge bg-success rounded-pill">Aktiv</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-3">
+                    <i class="fas fa-users fa-2x text-muted mb-2"></i>
+                    <p class="text-muted mb-2">İstifadəçi tapılmadı</p>
+                    <a href="{{ url_for('new_user') }}" class="btn btn-success btn-sm">
+                        <i class="fas fa-plus me-1"></i>İstifadəçi Əlavə Et
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
